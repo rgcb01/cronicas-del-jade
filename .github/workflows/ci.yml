@@ -1,21 +1,68 @@
-name: Verify prototype
+name: Verify and deploy Crónicas del Jade
 
 on:
   push:
     branches: [main]
   pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
 
 jobs:
-  test-and-build:
+  build:
+    name: Test and build website
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Run deterministic combat tests
+
+      - name: Test combat rules
         run: npm test
-      - name: Regenerate standalone HTML
+
+      - name: Build standalone website
         run: npm run build
-      - name: Check bundled HTML is up to date
+
+      - name: Verify generated HTML matches source
         run: git diff --exit-code -- index.html
+
+      - name: Configure Pages
+        if: github.event_name != 'pull_request'
+        uses: actions/configure-pages@v5
+
+      - name: Prepare site files
+        if: github.event_name != 'pull_request'
+        run: |
+          mkdir -p dist
+          cp index.html dist/index.html
+          cp .nojekyll dist/.nojekyll
+
+      - name: Upload website
+        if: github.event_name != 'pull_request'
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: dist
+
+  deploy:
+    name: Publish on GitHub Pages
+    if: github.event_name != 'pull_request'
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy website
+        id: deployment
+        uses: actions/deploy-pages@v4
