@@ -60,7 +60,7 @@ The project is in active development. Gameplay systems, visual assets, and techn
 
 ## Prototipo jugable en el navegador
 
-La versión actual está disponible como [`index.html`](./index.html). GitHub Pages puede publicarla desde la raíz de la rama `main`.
+La versión actual está disponible como [`index.html`](./index.html). GitHub Actions comprueba, compila y publica el juego automáticamente en GitHub Pages después de cada push a `main`.
 
 **Estado real:** prototipo 2D en solitario contra bots. Aún no hay ocho jugadores online, personajes 3D ni las facciones mongola y vietnamita jugables.
 
