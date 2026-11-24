@@ -1,5 +1,7 @@
 # Crónicas del Jade
 
+[![Verify and deploy Crónicas del Jade](https://github.com/rgcb01/cronicas-del-jade/actions/workflows/ci.yml/badge.svg)](https://github.com/rgcb01/cronicas-del-jade/actions/workflows/ci.yml)
+
 ## 🎮 [JUGAR AHORA — abrir el Auto Chess](https://rgcb01.github.io/cronicas-del-jade/index.html)
 
 **El juego está en GitHub Pages, NO en esta pantalla del repositorio.** Si ves el README y las características en texto, toca el enlace «JUGAR AHORA» de arriba. En iPhone, ábrelo en Safari.
