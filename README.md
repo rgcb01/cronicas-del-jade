@@ -1,5 +1,13 @@
 # Crónicas del Jade
 
+## 🎮 [JUGAR AHORA — abrir el Auto Chess](https://rgcb01.github.io/cronicas-del-jade/index.html)
+
+**El juego está en GitHub Pages, NO en esta pantalla del repositorio.** Si ves el README y las características en texto, toca el enlace «JUGAR AHORA» de arriba. En iPhone, ábrelo en Safari.
+
+**Enlace directo:** https://rgcb01.github.io/cronicas-del-jade/index.html
+
+---
+
 A Fantasy Auto-Battler Inspired by East Asian Mythology
 
 Crónicas del Jade is a strategic auto-battler set in an original fantasy universe inspired by the cultures, histories, and mythologies of East Asia.
