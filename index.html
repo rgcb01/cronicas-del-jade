@@ -14,6 +14,9 @@
 
 .result-buttons{display:flex;gap:9px;justify-content:center;flex-wrap:wrap}.result-buttons .primary-btn{flex:1}.result-buttons .secondary-btn{min-height:47px}.result-buttons>*{min-width:140px}
 
+/* v0.4.0: snapshot-driven combat feedback */
+.battle-piece{position:relative;animation:jade-move var(--motion,120ms) ease-out both;z-index:2}.battle-piece.casting .battle-glyph{animation:jade-cast .35s ease-out both}.battle-piece.hit .battle-glyph{filter:brightness(1.35)}.damage-float{position:absolute;top:0;left:50%;transform:translateX(-50%);color:#ffd0bb;font-weight:800;font-size:clamp(9px,2vw,14px);text-shadow:0 1px 3px #000;z-index:5;pointer-events:none;animation:jade-float .4s ease-out both}.damage-float.healing{color:#a9f6bc}.shield-ring{position:absolute;inset:2px;border:2px solid #91d9f1;border-radius:50%;pointer-events:none;box-shadow:0 0 7px #91d9f188}.board:has(.battle-piece) .square{overflow:visible}@keyframes jade-move{from{transform:translate(var(--dx,0),var(--dy,0))}to{transform:translate(0,0)}}@keyframes jade-cast{0%{filter:brightness(1.8);transform:scale(1.2)}100%{filter:brightness(1);transform:scale(1)}}@keyframes jade-float{from{opacity:1;translate:0 0}to{opacity:.75;translate:0 -8px}}@media(prefers-reduced-motion:reduce){.battle-piece,.battle-piece.casting .battle-glyph,.damage-float{animation:none!important}}
+
 </style>
 </head>
 <body>
@@ -539,7 +542,12 @@
     const u=E.byId[actor.uid.startsWith('decoy-')?'duri':E.units.find(x=>x.name===actor.name)?.id]||E.byId[actor.uid.split('-').at(-1)]||E.byId.toru;
     const hpPct=Math.max(0,Math.round(actor.hp/actor.maxHp*100));
     const manaPct=Math.min(100,Math.round(actor.mana));
-    return `<span class="battle-piece faction-${u.faction} ${actor.owner?'foe':''} ${actor.summon?'decoy':''}" title="${actor.name}: ${actor.hp}/${actor.maxHp} PV"><span class="battle-glyph">${actor.icon}</span><span class="piece-hp"><i style="width:${hpPct}%"></i></span><span class="piece-mana"><i style="width:${manaPct}%"></i></span></span>`;
+    const idx=Math.min(Math.floor(currentFrame),state.battle.frames.length-1);
+    const prev=state.battle.frames[Math.max(0,idx-1)].actors.find(a=>a.uid===actor.uid);
+    const delta=prev?prev.hp-actor.hp:0;
+    const cast=state.battle.events.some(e=>e.kind==='skill'&&e.uid===actor.uid&&e.t<=state.battle.frames[idx].t&&e.t>state.battle.frames[idx].t-.3);
+    const dx=prev?prev.x-actor.x:0,dy=prev?prev.y-actor.y:0;
+    return `<span class="battle-piece faction-${u.faction} ${actor.owner?'foe':''} ${actor.summon?'decoy':''} ${cast?'casting':''} ${delta>0?'hit':''}" style="--dx:${dx*100}%;--dy:${dy*100}%;--motion:${Math.max(50,180/speed)}ms" title="${actor.name}: ${actor.hp}/${actor.maxHp} PV"><span class="battle-glyph">${actor.icon}</span>${delta!==0?`<span class="damage-float ${delta<0?'healing':''}">${delta<0?'+':'−'}${Math.abs(delta)}</span>`:''}${actor.shield>0?'<span class="shield-ring"></span>':''}<span class="piece-hp"><i style="width:${hpPct}%"></i></span><span class="piece-mana"><i style="width:${manaPct}%"></i></span></span>`;
   }
   function displayTeam(){
     const battle=state.phase==='battle'||state.phase==='replay',frame=battle?state.battle.frames[Math.min(Math.floor(currentFrame),state.battle.frames.length-1)]:null;
@@ -555,7 +563,7 @@
   }
   function shopCard(id,index){
     if(id==null)return `<div class="shop-card empty"><span>Adquirido</span></div>`;
-    const u=E.byId[id],disabled=state.gold<u.cost;
+    const u=E.byId[id],disabled=state.phase!=='prep'||state.gold<u.cost;
     return `<button type="button" class="shop-card faction-${u.faction}" data-act="buy" data-idx="${index}" ${disabled?'disabled':''}>
       <span class="shop-portrait">${u.icon}<small>${factionSymbols[u.faction]}</small></span>
       <span class="shop-title">${u.name}</span><span class="shop-role">${E.roleNames[u.role]}</span>
@@ -609,7 +617,7 @@
     const battle=state.phase==='battle'||state.phase==='replay', prep=state.phase==='prep', gameover=state.phase==='gameover';
     const frame=battle?state.battle.frames[Math.min(Math.floor(currentFrame),state.battle.frames.length-1)]:null;
     app.innerHTML=`<div class="shell">
-      <header class="masthead"><div class="brand"><div class="brand-seal">玉</div><div><div class="eyebrow">EL CIELO FRAGMENTADO</div><h1>Crónicas <em>del Jade</em></h1></div></div><div class="build-tag">PROTOTIPO 0.3.0 · COMBATE TÁCTICO</div></header>
+      <header class="masthead"><div class="brand"><div class="brand-seal">玉</div><div><div class="eyebrow">EL CIELO FRAGMENTADO</div><h1>Crónicas <em>del Jade</em></h1></div></div><div class="build-tag">PROTOTIPO 0.4.0 · COMBATE TÁCTICO</div></header>
       <div class="hud"><div class="hud-unit"><span>RONDA</span><strong>${state.round}</strong></div><div class="hud-unit life"><span>VIDA</span><strong>♥ ${state.life}</strong></div><div class="hud-unit money"><span>ORO</span><strong>◈ ${state.gold}</strong></div><div class="hud-unit"><span>DESPLIEGUE</span><strong>${state.board.length} / ${cap()}</strong></div><div class="hud-unit"><span>RÉCORD</span><strong>${state.wins}V · ${state.losses}D</strong></div></div>
       <main class="layout"><section class="main-panel">
         <div class="panel-heading"><div><div class="eyebrow">CAMPO DEL ASTROLABIO</div><h2>${battle?'Combate en curso':prep?'Preparación':gameover?'El Concilio ha terminado':'Resultado de la ronda'}</h2></div>${battle?`<div class="time-tag">${frame.t.toFixed(1)} s</div>`:`<span class="phase-indicator">${prep?'ESTRATEGIA':state.phase==='result'?'DESCANSO':'BATALLA'}</span>`}</div>

@@ -219,7 +219,12 @@
     const u=E.byId[actor.uid.startsWith('decoy-')?'duri':E.units.find(x=>x.name===actor.name)?.id]||E.byId[actor.uid.split('-').at(-1)]||E.byId.toru;
     const hpPct=Math.max(0,Math.round(actor.hp/actor.maxHp*100));
     const manaPct=Math.min(100,Math.round(actor.mana));
-    return `<span class="battle-piece faction-${u.faction} ${actor.owner?'foe':''} ${actor.summon?'decoy':''}" title="${actor.name}: ${actor.hp}/${actor.maxHp} PV"><span class="battle-glyph">${actor.icon}</span><span class="piece-hp"><i style="width:${hpPct}%"></i></span><span class="piece-mana"><i style="width:${manaPct}%"></i></span></span>`;
+    const idx=Math.min(Math.floor(currentFrame),state.battle.frames.length-1);
+    const prev=state.battle.frames[Math.max(0,idx-1)].actors.find(a=>a.uid===actor.uid);
+    const delta=prev?prev.hp-actor.hp:0;
+    const cast=state.battle.events.some(e=>e.kind==='skill'&&e.uid===actor.uid&&e.t<=state.battle.frames[idx].t&&e.t>state.battle.frames[idx].t-.3);
+    const dx=prev?prev.x-actor.x:0,dy=prev?prev.y-actor.y:0;
+    return `<span class="battle-piece faction-${u.faction} ${actor.owner?'foe':''} ${actor.summon?'decoy':''} ${cast?'casting':''} ${delta>0?'hit':''}" style="--dx:${dx*100}%;--dy:${dy*100}%;--motion:${Math.max(50,180/speed)}ms" title="${actor.name}: ${actor.hp}/${actor.maxHp} PV"><span class="battle-glyph">${actor.icon}</span>${delta!==0?`<span class="damage-float ${delta<0?'healing':''}">${delta<0?'+':'−'}${Math.abs(delta)}</span>`:''}${actor.shield>0?'<span class="shield-ring"></span>':''}<span class="piece-hp"><i style="width:${hpPct}%"></i></span><span class="piece-mana"><i style="width:${manaPct}%"></i></span></span>`;
   }
   function displayTeam(){
     const battle=state.phase==='battle'||state.phase==='replay',frame=battle?state.battle.frames[Math.min(Math.floor(currentFrame),state.battle.frames.length-1)]:null;
@@ -235,7 +240,7 @@
   }
   function shopCard(id,index){
     if(id==null)return `<div class="shop-card empty"><span>Adquirido</span></div>`;
-    const u=E.byId[id],disabled=state.gold<u.cost;
+    const u=E.byId[id],disabled=state.phase!=='prep'||state.gold<u.cost;
     return `<button type="button" class="shop-card faction-${u.faction}" data-act="buy" data-idx="${index}" ${disabled?'disabled':''}>
       <span class="shop-portrait">${u.icon}<small>${factionSymbols[u.faction]}</small></span>
       <span class="shop-title">${u.name}</span><span class="shop-role">${E.roleNames[u.role]}</span>
@@ -289,7 +294,7 @@
     const battle=state.phase==='battle'||state.phase==='replay', prep=state.phase==='prep', gameover=state.phase==='gameover';
     const frame=battle?state.battle.frames[Math.min(Math.floor(currentFrame),state.battle.frames.length-1)]:null;
     app.innerHTML=`<div class="shell">
-      <header class="masthead"><div class="brand"><div class="brand-seal">玉</div><div><div class="eyebrow">EL CIELO FRAGMENTADO</div><h1>Crónicas <em>del Jade</em></h1></div></div><div class="build-tag">PROTOTIPO 0.3.0 · COMBATE TÁCTICO</div></header>
+      <header class="masthead"><div class="brand"><div class="brand-seal">玉</div><div><div class="eyebrow">EL CIELO FRAGMENTADO</div><h1>Crónicas <em>del Jade</em></h1></div></div><div class="build-tag">PROTOTIPO 0.4.0 · COMBATE TÁCTICO</div></header>
       <div class="hud"><div class="hud-unit"><span>RONDA</span><strong>${state.round}</strong></div><div class="hud-unit life"><span>VIDA</span><strong>♥ ${state.life}</strong></div><div class="hud-unit money"><span>ORO</span><strong>◈ ${state.gold}</strong></div><div class="hud-unit"><span>DESPLIEGUE</span><strong>${state.board.length} / ${cap()}</strong></div><div class="hud-unit"><span>RÉCORD</span><strong>${state.wins}V · ${state.losses}D</strong></div></div>
       <main class="layout"><section class="main-panel">
         <div class="panel-heading"><div><div class="eyebrow">CAMPO DEL ASTROLABIO</div><h2>${battle?'Combate en curso':prep?'Preparación':gameover?'El Concilio ha terminado':'Resultado de la ronda'}</h2></div>${battle?`<div class="time-tag">${frame.t.toFixed(1)} s</div>`:`<span class="phase-indicator">${prep?'ESTRATEGIA':state.phase==='result'?'DESCANSO':'BATALLA'}</span>`}</div>

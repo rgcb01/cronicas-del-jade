@@ -1,7 +1,7 @@
 {
   "name": "cronicas-del-jade-prototipo",
   "private": true,
-  "version": "0.3.0",
+  "version": "0.4.0",
   "type": "commonjs",
   "scripts": {
     "build": "node scripts/build.mjs",
